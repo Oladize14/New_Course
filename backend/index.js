@@ -1,6 +1,14 @@
-const express = require('express')
+import express from 'express'
+import dotenv from 'dotenv'
+import cookiePerser from 'cookie-parser'
 const app = express()
-const cors = require('cors')
+dotenv.config()
+
+import connectDb from './Db/connectDb.js'
+
+import AuthRouter  from './Routes/authRouter.js'
+
+import cors from 'cors'
 const PORT = process.env.PORT || 8080
 
 const requestLogger = (request, response, next) => {
@@ -10,9 +18,13 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
+
+app.use(cookiePerser())
 app.use(express.json())
-app.use(cors())
+app.use(cors({origin: "http://localhost:5173", credentials: true}))
 app.use(requestLogger)
+
+app.use('/auth', AuthRouter)
 
 
 let notes = [
@@ -75,4 +87,11 @@ let notes = [
     response.json(note)
   })
 
-app.listen(PORT, ()=>console.log(`app listen on port ${PORT}`))
+app.listen(PORT, ()=>{
+  try {
+    connectDb(process.env.MONGO_URI)
+    console.log(`app listen on port ${PORT}`)
+  } catch (error) {
+    console.log('failed to start server')
+  }
+})
